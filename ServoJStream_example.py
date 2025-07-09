@@ -8,7 +8,7 @@ start_angles_deg = np.array([0.0, 0.0, 90.0, 0.0, 90.0, 0.0])
 TOPIC_NAME = '/dsr01m1013/servoj_stream'
 vel = [100] * 6
 acc = [100] * 6
-time_sec = 0.01  # Optimally 8ms for RT, 20ms for non-RT
+time_sec = 0.02  # Optimally 8ms for RT, 20ms for non-RT
 
 # Sin wave parameters
 AMPLITUDE_DEG = 2.5 # if larger than 2.5, the robot get 
