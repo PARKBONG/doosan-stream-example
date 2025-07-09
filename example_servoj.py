@@ -1,35 +1,54 @@
 #!/usr/bin/env python3
 import rospy
-from dsr_msgs.msg import ServoJRTStream
+from dsr_msgs.msg import ServoJRTStream, ServoJStream
 import numpy as np
 
-# 초기값 설정
-start_angles = np.deg2rad([0, 0.0, 0.0, 0.0, 0.0, 0.0])
-interval = 0.01  # 100 Hz
-vel = [0.0] * 6
-acc = [0.0] * 6
-time_sec = 0.05  # 도달 시간
+start_angles_deg = np.array([0.0, 0.0, 90.0, 0.0, 90.0, 0.0])
+vel = [100] * 6
+acc = [100] * 6
+time_sec = 0.008  # Optimally 8ms for RT, 20ms for non-RT
 
+AMPLITUDE = 1 # DEGREE
+USE_RT = True
 class ServoJStreamer:
     def __init__(self):
-        self.pub = rospy.Publisher('/dsr01m1013/servoj_rt_stream', ServoJRTStream, queue_size=10)
-        self.current_angles = start_angles.copy()
-        rospy.Timer(rospy.Duration(interval), self.timer_callback)
+
+        if USE_RT:
+            self.pub = rospy.Publisher('/dsr01m1013/servoj_rt_stream', ServoJRTStream, queue_size=10)
+        else:
+            self.pub = rospy.Publisher('/dsr01m1013/servoj_stream', ServoJStream, queue_size=10)
+
+        self.current_angles_deg = start_angles_deg.copy()
+        self.t_start = rospy.get_time()
+        rospy.Timer(rospy.Duration(time_sec), self.timer_callback)
 
     def timer_callback(self, event):
-        msg = ServoJRTStream()
-        msg.pos = self.current_angles.tolist()
-        msg.vel = vel
-        msg.acc = acc
-        msg.time = time_sec
-        self.pub.publish(msg)
-        rospy.loginfo_throttle(1.0, f"Published joint pos: {np.rad2deg(self.current_angles)}")
 
-        # (선택) 조인트 변화 로직 추가
-        self.current_angles[0] += np.deg2rad(0.1) 
+        if USE_RT:
+            msg = ServoJRTStream()
+            msg.pos = self.current_angles_deg.tolist()
+            msg.vel = vel
+            msg.acc = acc
+            msg.time = time_sec
+            self.pub.publish(msg)
+            rospy.loginfo_throttle(1.0, f"[RT] Published joint pos: {self.current_angles_deg}")
+
+        else:
+            msg = ServoJStream()
+            msg.pos = self.current_angles_deg.tolist()
+            msg.vel = vel
+            msg.acc = acc
+            msg.time = time_sec
+            self.pub.publish(msg)
+            rospy.loginfo_throttle(1.0, f"Published joint pos: {self.current_angles_deg}")
+
+        t = rospy.get_time()
+        for i in range(6):
+            self.current_angles_deg[i] = start_angles_deg[i] + AMPLITUDE * np.sin(2 * np.pi * (t - self.t_start) / 10)
+
 
 if __name__ == '__main__':
-    rospy.init_node('servoj_rt_stream_publisher')
+    rospy.init_node('doosan_streamj_publisher')
     streamer = ServoJStreamer()
-    rospy.loginfo("Started ServoJRTStream publisher...")
+    rospy.loginfo("Started  doosan_streamj_publisher...")
     rospy.spin()
