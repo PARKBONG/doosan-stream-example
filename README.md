@@ -38,7 +38,7 @@ rosservice call /$ROBOT_NS/system/set_safety_mode "{safety_mode: 1, safety_mode_
 ```
 ### Publish ROS topic
 ```
-/ser/bin/python3 ServoJStream_example.py
+/usr/bin/python3 ServoJStream_example.py
 ```
 ## Trouble Shooting
 ### 2.5.7056 waring
